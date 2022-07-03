@@ -1,0 +1,26 @@
+{
+  "name": "backend_prac1",
+  "version": "1.0.0",
+  "description": "backend practise",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "proxy": "http://localhost:5000",
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
+    "express": "^4.18.1",
+    "express-validator": "^6.14.2",
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.29.3",
+    "mongoose": "^6.4.0",
+    "nodemailer": "^6.7.6",
+    "nodemon": "^2.0.16",
+    "soft-delete-plugin-mongoose": "^1.0.15",
+    "uuid": "^8.3.2"
+  }
+}

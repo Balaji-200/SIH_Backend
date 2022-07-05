@@ -4,7 +4,7 @@ const { softDeletePlugin } = require('soft-delete-plugin-mongoose');
 const UserVerification = new mongoose.Schema({
     userId: String,
     otp: String,
-    createdAt:Date,
+    createdAt: Date,
     expiredAt: Date,
 })
 UserVerification.plugin(softDeletePlugin);

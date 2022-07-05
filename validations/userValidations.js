@@ -1,8 +1,10 @@
 //User Model
 const User = require('../models/UserModel')
+
 const { body, validationResult } = require('express-validator')
 
-const userValidationRules = () => {
+// registration
+const registrationAuthRules = () => {
   return [
     body('name').isLength({ min: 3 }),
     body('surname').isLength({ min: 3 }),
@@ -18,7 +20,7 @@ const userValidationRules = () => {
   ]
 }
 
-const validate = (req, res, next) => {
+const validateRegistration = (req, res, next) => {
   const errors = validationResult(req)
   if (errors.isEmpty()) {
     return next()
@@ -28,7 +30,28 @@ const validate = (req, res, next) => {
   }
 }
 
+// Login
+const loginAuthRules = () => {
+  return [
+      body('username').isAlphanumeric(),
+      body('password').isAlphanumeric().isLength({ min: 6 }),
+  ]
+}
+
+const validateLogin = (req, res, next) => {
+  const errors = validationResult(req)
+  if (errors.isEmpty()) {
+    return next()
+  }
+  else{
+    return res.status(400).json({ errors: errors.array() });
+  }
+}
+
+
 module.exports = {
-  userValidationRules,
-  validate,
+  registrationAuthRules,
+  validateRegistration,
+  loginAuthRules,
+  validateLogin
 }

@@ -6,7 +6,7 @@ const User = new mongoose.Schema({
     age: Number,
     username: String,
     password: String,
-    role: { type: String, default: 'user' },
+    roles: { type: Array, default: 'user' },
     verified: Boolean,
 })
 module.exports = mongoose.model('user', User)

@@ -12,6 +12,9 @@ const UserVerification = require("../models/UserVerificationModel");
 
 // nodemailer
 const nodemailer = require('nodemailer');
+
+const {currentDateTime} = require('../controllers/DateController')
+
 //nodemailer stuff
 let transpoter = nodemailer.createTransport({
     service: "gmail",
@@ -21,38 +24,26 @@ let transpoter = nodemailer.createTransport({
     }
 })
 
-const createUser = async (req,res) => {
+const registerUser = async (req, res) => {
     try {
         let { name, surname, email, age, username, password } = req.body;
         const salt = await bcrypt.genSalt(10);
-        password = await bcrypt.hash(password,salt);
-        // const errors = validationResult(req);
-        // if (false) {
-        //     return res.status(400).json({ errors: errors.array() });
-        // } else {
-            const newUser = new User({
-                name,
-                surname,
-                age,
-                email,
-                username,
-                password,
-                verified: false,
+        password = await bcrypt.hash(password, salt);
+        const newUser = new User({
+            name,
+            surname,
+            age,
+            email,
+            username,
+            password,
+            verified: false,
+        })
+        newUser
+            .save()
+            .then((result) => {
+                // handle verification
+                sendVerificationEmail(result, res);
             })
-            newUser
-                .save()
-                .then((result) => {
-                    // handle verification
-                    sendVerificationEmail(result, res);
-                })
-            // const data = {
-            //     user: {
-            //         id: newUser.id
-            //     }
-            // }
-            // const authToken = jwt.sign(data, JWT_SECRET);
-        // }
-
     } catch (error) {
         res.send({ message: error })
     }
@@ -72,8 +63,8 @@ const sendVerificationEmail = async ({ _id, email }, res) => {
         const newOtpVerification = await new UserVerification({
             userId: _id,
             otp: otp,
-            createdAt: Date.now(),
-            expiredAt: Date.now() + 300000,
+            createdAt: new Date(),
+            expiredAt: new Date().setMinutes(new Date().getMinutes() + 10)
         })
         await newOtpVerification.save();
         await transpoter.sendMail(mailOptions);
@@ -113,8 +104,11 @@ const verifyOtp = async (req, res) => {
                 // check expiry
                 const { expiredAt } = userVerificationRecord[0];
                 const originalOtp = userVerificationRecord[0].otp;
-                console.log(originalOtp)
-                if (expiredAt < Date.now()) {
+                // console.log(originalOtp)
+                console.log(currentDateTime(expiredAt))
+                console.log(Date.now())
+                // console.log(currentDateTime(expiredAt) < Date.now())
+                if (currentDateTime(expiredAt) < Date.now()) {
                     // otp expired
                     await UserVerification.softDelete({ userId });
                     throw new Error("OTP has expired , Try to resend it");
@@ -149,11 +143,14 @@ const resendOtp = async (req, res) => {
         // delete present record
         await UserVerification.softDelete({ userId });
         const otpObject = await UserVerification.find({
-            userId: userId, createdAt: {
-                $lt: Date.now(),
-                $gt: Date.now() - 300000
-            }
-        });
+            userId : userId , 
+            createdAt: {
+                $lt: new Date(),
+                $gt: new Date(new Date().getTime() - 10*60000)
+            }, 
+            isDeleted : true
+        }).count();
+
         console.log(otpObject);
 
         if (!userId || !email) {
@@ -166,17 +163,6 @@ const resendOtp = async (req, res) => {
                     staus: "FAILED",
                     message: "OTP LIMIT REACHED . Try After 5 minutes",
                 });
-                let countDown = 5;
-                function coutdown() {
-                    if (countDown >= 0) {
-                        console.log(countDown);
-                    }
-                    else {
-                        return;
-                    }
-                    countDown--;
-                }
-                setInterval(coutdown, 5000)
             }
 
         }
@@ -189,11 +175,11 @@ const resendOtp = async (req, res) => {
 }
 
 // LoginUser
-const userLogin =  async (req, res) => {
+const userLogin = async (req, res) => {
     const { username, password } = await req.body;
     try {
         let user = await User.findOne({ username });
-        const passwordCompare = bcrypt.compare(password,user.password)
+        const passwordCompare = bcrypt.compare(password, user.password)
         if (!user || !passwordCompare) {
             return res.json({ "message": "Try to login with correct credentials" })
         }
@@ -203,7 +189,7 @@ const userLogin =  async (req, res) => {
             }
         }
         const authToken = jwt.sign(data, JWT_SECRET);
-        res.json({authToken:authToken,message:"login Successful"})
+        res.json({ authToken: authToken, message: "login Successful" })
 
     } catch (error) {
         res.send({ message: error })
@@ -211,8 +197,8 @@ const userLogin =  async (req, res) => {
 }
 
 module.exports = {
-    createUser:createUser,
-    verifyOtp:verifyOtp,
-    resendOtp:resendOtp,
-    userLogin:userLogin,
+    registerUser: registerUser,
+    verifyOtp: verifyOtp,
+    resendOtp: resendOtp,
+    userLogin: userLogin,
 }

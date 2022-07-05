@@ -8,27 +8,21 @@ const JWT_SECRET = "secretforpractise"
 var jwt = require('jsonwebtoken');
 
 // user controller
-const userController = require('../controllers/UserController')
-const { body, validationResult } = require('express-validator')
+const authController = require('../controllers/AuthController')
 
 // validations 
-const { userValidationRules, validate } = require('../validations/userValidations')
+const { registrationAuthRules, validateRegistration,loginAuthRules, validateLogin } = require('../validations/userValidations')
 
 // creating new user
-router.post("/create_user",userValidationRules(),validate, userController.createUser)
+router.post("/create_user",registrationAuthRules(),validateRegistration, authController.registerUser)
 
 // verify email
-router.post("/verifyOTP", userController.verifyOtp)
+router.post("/verifyOTP", authController.verifyOtp)
 
 // resend verification
-router.post("/resendOTPVerification", userController.resendOtp)
+router.post("/resendOTPVerification", authController.resendOtp)
 
 // login user
-router.post("/login_user", [
-    body('username').isAlphanumeric(),
-    body('password').isAlphanumeric().isLength({ min: 6 }),
-], userController.userLogin)
-
-
+router.post("/login_user",loginAuthRules(), validateLogin, authController.userLogin)
 
 module.exports = router

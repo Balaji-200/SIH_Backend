@@ -14,7 +14,8 @@ const User = require("../models/UserModel");
 // User OTP Verification model
 const UserVerification = require("../models/UserVerificationModel");
 
-const { currentDateTime } = require('../controllers/DateController')
+const { currentDateTime } = require('../controllers/DateController');
+const { errorMessage } = require("../controllers/errorController");
 
 // Node Mailer setup
 let transporter = nodemailer.createTransport({
@@ -46,7 +47,7 @@ const registerUser = async (req, res) => {
                 sendVerificationEmail(result, res);
             })
     } catch (error) {
-        res.send({ message: error })
+        errorMessage(error);
     }
 }
 
@@ -78,10 +79,7 @@ const sendVerificationEmail = async ({ _id, email }, res) => {
             },
         });
     } catch (error) {
-        res.json({
-            staus: "error",
-            message: error.message,
-        });
+        errorMessage(error);
     }
 
 }
@@ -91,12 +89,14 @@ const verifyOtp = async (req, res) => {
     try {
         let { userId, otp } = req.body;
         if (!userId || !otp) {
-            throw Error("Empty otp details are not allowed");
+            let message = "Empty otp details are not allowed";
+            errorMessage(message);
         } else {
             const userVerificationRecord = await UserVerification.find({ userId: userId });
             console.log(userVerificationRecord);
             if (userVerificationRecord.length <= 0) {
-                throw new Error("Account record not find, please sign up or login");
+                let message = "Account record not find, please sign up or login";
+                errorMessage(message);
             } else {
                 // check expiry
                 const { expiredAt } = userVerificationRecord[0];
@@ -104,7 +104,8 @@ const verifyOtp = async (req, res) => {
                 if (currentDateTime(expiredAt) < Date.now()) {
                     // otp expired
                     await UserVerification.softDelete({ userId });
-                    throw new Error("OTP has expired , Try to resend it");
+                    let message = "OTP has expired , Try to resend it";
+                    errorMessage(message);
                 } else {
                     // success
                     if (otp === originalOtp) {
@@ -115,16 +116,14 @@ const verifyOtp = async (req, res) => {
                             message: "Your email account has been successfully verified."
                         })
                     } else {
-                        throw new Error("OTP does match, please try again");
+                        let message = "OTP does match, please try again";
+                        errorMessage(message);
                     }
                 }
             }
         }
     } catch (error) {
-        res.json({
-            status: "error",
-            message: error.message,
-        })
+        errorMessage(error);
     }
 }
 
@@ -144,26 +143,20 @@ const resendOtp = async (req, res) => {
             isDeleted : true
         }).count();
 
-        console.log(otpObject);
-
         if (!userId || !email) {
-            throw Error("Empty email details are not allowed");
+            let message = "Empty email details are not allowed";
+            errorMessage(message);
         } else {
             if (otpObject < 5) {
                 sendVerificationEmail({ _id: userId, email }, res)
             } else {
-                res.json({
-                    status: "error",
-                    message: "OTP LIMIT REACHED . Try After 5 minutes",
-                });
+                let message = "OTP LIMIT REACHED . Try After 5 minutes";
+                errorMessage(message);
             }
 
         }
     } catch (error) {
-        res.json({
-            status: "error",
-            message: error.message,
-        })
+        errorMessage(error);
     }
 }
 
@@ -174,10 +167,8 @@ const userLogin = async (req, res) => {
         let user = await User.findOne({ username });
         const passwordCompare = bcrypt.compare(password, user.password)
         if (!user || !passwordCompare) {
-            return res.json({ 
-                status: "error",
-                message: "Try to login with correct credentials", 
-            })
+            let message = "Try to login with correct credentials";
+            errorMessage(message);
         }
         const data = {
             user: {
@@ -188,10 +179,7 @@ const userLogin = async (req, res) => {
         res.json({ authToken: authToken, message: "login Successful" })
 
     } catch (error) {
-        res.send({ 
-            status: "success",
-            message: error 
-        })
+        errorMessage(error);
     }
 }
 

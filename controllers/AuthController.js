@@ -14,8 +14,8 @@ const User = require("../models/UserModel");
 // User OTP Verification model
 const UserVerification = require("../models/UserVerificationModel");
 
-const { currentDateTime } = require('../controllers/DateController');
-const { errorMessage } = require("../controllers/errorController");
+const { currentDateTime } = require('./DateController');
+const { errorMessage,successMessage } = require("./messageController");
 
 // Node Mailer setup
 let transporter = nodemailer.createTransport({
@@ -47,7 +47,7 @@ const registerUser = async (req, res) => {
                 sendVerificationEmail(result, res);
             })
     } catch (error) {
-        errorMessage(error);
+        errorMessage(res,error);
     }
 }
 
@@ -70,16 +70,11 @@ const sendVerificationEmail = async ({ _id, email }, res) => {
         })
         await newOtpVerification.save();
         await transporter.sendMail(mailOptions);
-        res.json({
-            staus: "success",
-            message: "Verifaction otp is send to your email",
-            data: {
-                userId: _id,
-                email,
-            },
-        });
+        let message = "Verification otp is send to your email";
+        let data = { userId: _id, email: email }; 
+        successMessage(res,message,data);
     } catch (error) {
-        errorMessage(error);
+        errorMessage(res,error);
     }
 
 }
@@ -90,13 +85,13 @@ const verifyOtp = async (req, res) => {
         let { userId, otp } = req.body;
         if (!userId || !otp) {
             let message = "Empty otp details are not allowed";
-            errorMessage(message);
+            errorMessage(res,message);
         } else {
             const userVerificationRecord = await UserVerification.find({ userId: userId });
             console.log(userVerificationRecord);
             if (userVerificationRecord.length <= 0) {
                 let message = "Account record not find, please sign up or login";
-                errorMessage(message);
+                errorMessage(res,message);
             } else {
                 // check expiry
                 const { expiredAt } = userVerificationRecord[0];
@@ -105,19 +100,17 @@ const verifyOtp = async (req, res) => {
                     // otp expired
                     await UserVerification.softDelete({ userId });
                     let message = "OTP has expired , Try to resend it";
-                    errorMessage(message);
+                    errorMessage(res,message);
                 } else {
                     // success
                     if (otp === originalOtp) {
                         await User.updateOne({ _id: userId }, { verified: true });
                         await UserVerification.softDelete({ userId });
-                        res.json({
-                            status: "success",
-                            message: "Your email account has been successfully verified."
-                        })
+                        let message = "Your email account has been successfully verified.";
+                        successMessage(res,message,'');
                     } else {
                         let message = "OTP does match, please try again";
-                        errorMessage(message);
+                        errorMessage(res,message);
                     }
                 }
             }
@@ -145,13 +138,13 @@ const resendOtp = async (req, res) => {
 
         if (!userId || !email) {
             let message = "Empty email details are not allowed";
-            errorMessage(message);
+            errorMessage(res,message);
         } else {
             if (otpObject < 5) {
                 sendVerificationEmail({ _id: userId, email }, res)
             } else {
                 let message = "OTP LIMIT REACHED . Try After 5 minutes";
-                errorMessage(message);
+                errorMessage(res,message);
             }
 
         }
@@ -168,7 +161,7 @@ const userLogin = async (req, res) => {
         const passwordCompare = bcrypt.compare(password, user.password)
         if (!user || !passwordCompare) {
             let message = "Try to login with correct credentials";
-            errorMessage(message);
+            errorMessage(res,message);
         }
         const data = {
             user: {
@@ -176,10 +169,11 @@ const userLogin = async (req, res) => {
             }
         }
         const authToken = jwt.sign(data, JWT_SECRET);
-        res.json({ authToken: authToken, message: "login Successful" })
-
+        let message = "Login Successfull";
+        let toSendData = { authToken: authToken };
+        successMessage(res,message, toSendData);
     } catch (error) {
-        errorMessage(error);
+        errorMessage(res,error);
     }
 }
 

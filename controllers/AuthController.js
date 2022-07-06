@@ -1,22 +1,23 @@
-// bcypt 
+// Bcrypt Package 
 const bcrypt = require("bcrypt")
-
-// user model
-const User = require("../models/UserModel");
 
 // env package
 require('dotenv').config();
 
-// verifiaction model
-const UserVerification = require("../models/UserVerificationModel");
-
-// nodemailer
+// Node Mailer
 const nodemailer = require('nodemailer');
 
-const {currentDateTime} = require('../controllers/DateController')
+// User model
+const User = require("../models/UserModel");
 
-//nodemailer stuff
-let transpoter = nodemailer.createTransport({
+
+// User OTP Verification model
+const UserVerification = require("../models/UserVerificationModel");
+
+const { currentDateTime } = require('../controllers/DateController')
+
+// Node Mailer setup
+let transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
         user: process.env.AUTH_EMAIL,
@@ -41,7 +42,7 @@ const registerUser = async (req, res) => {
         newUser
             .save()
             .then((result) => {
-                // handle verification
+                // Handle OTP Verification through Email
                 sendVerificationEmail(result, res);
             })
     } catch (error) {
@@ -67,9 +68,9 @@ const sendVerificationEmail = async ({ _id, email }, res) => {
             expiredAt: new Date().setMinutes(new Date().getMinutes() + 10)
         })
         await newOtpVerification.save();
-        await transpoter.sendMail(mailOptions);
+        await transporter.sendMail(mailOptions);
         res.json({
-            staus: "PENDING",
+            staus: "success",
             message: "Verifaction otp is send to your email",
             data: {
                 userId: _id,
@@ -78,7 +79,7 @@ const sendVerificationEmail = async ({ _id, email }, res) => {
         });
     } catch (error) {
         res.json({
-            staus: "FAILED",
+            staus: "error",
             message: error.message,
         });
     }
@@ -89,25 +90,17 @@ const sendVerificationEmail = async ({ _id, email }, res) => {
 const verifyOtp = async (req, res) => {
     try {
         let { userId, otp } = req.body;
-        console.log(userId);
-        console.log(otp);
         if (!userId || !otp) {
             throw Error("Empty otp details are not allowed");
         } else {
-
             const userVerificationRecord = await UserVerification.find({ userId: userId });
             console.log(userVerificationRecord);
-
             if (userVerificationRecord.length <= 0) {
                 throw new Error("Account record not find, please sign up or login");
             } else {
                 // check expiry
                 const { expiredAt } = userVerificationRecord[0];
                 const originalOtp = userVerificationRecord[0].otp;
-                // console.log(originalOtp)
-                console.log(currentDateTime(expiredAt))
-                console.log(Date.now())
-                // console.log(currentDateTime(expiredAt) < Date.now())
                 if (currentDateTime(expiredAt) < Date.now()) {
                     // otp expired
                     await UserVerification.softDelete({ userId });
@@ -118,8 +111,8 @@ const verifyOtp = async (req, res) => {
                         await User.updateOne({ _id: userId }, { verified: true });
                         await UserVerification.softDelete({ userId });
                         res.json({
-                            status: "VERIFIED",
-                            message: "Your email account successfully verified."
+                            status: "success",
+                            message: "Your email account has been successfully verified."
                         })
                     } else {
                         throw new Error("OTP does match, please try again");
@@ -129,7 +122,7 @@ const verifyOtp = async (req, res) => {
         }
     } catch (error) {
         res.json({
-            status: "FAILED",
+            status: "error",
             message: error.message,
         })
     }
@@ -160,7 +153,7 @@ const resendOtp = async (req, res) => {
                 sendVerificationEmail({ _id: userId, email }, res)
             } else {
                 res.json({
-                    staus: "FAILED",
+                    status: "error",
                     message: "OTP LIMIT REACHED . Try After 5 minutes",
                 });
             }
@@ -168,7 +161,7 @@ const resendOtp = async (req, res) => {
         }
     } catch (error) {
         res.json({
-            status: "FAILED",
+            status: "error",
             message: error.message,
         })
     }
@@ -181,7 +174,10 @@ const userLogin = async (req, res) => {
         let user = await User.findOne({ username });
         const passwordCompare = bcrypt.compare(password, user.password)
         if (!user || !passwordCompare) {
-            return res.json({ "message": "Try to login with correct credentials" })
+            return res.json({ 
+                status: "error",
+                message: "Try to login with correct credentials", 
+            })
         }
         const data = {
             user: {
@@ -192,7 +188,10 @@ const userLogin = async (req, res) => {
         res.json({ authToken: authToken, message: "login Successful" })
 
     } catch (error) {
-        res.send({ message: error })
+        res.send({ 
+            status: "success",
+            message: error 
+        })
     }
 }
 

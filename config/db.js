@@ -1,8 +1,11 @@
+// Mongoose Package
 const mongoose = require('mongoose');
-const mongoUrl = "mongodb://localhost:27017/backendPrac";
-const connectTOMongo = () =>{
-    mongoose.connect(mongoUrl,()=>{
-        console.log("Connected to mongo successfuly");
-    })
+// env package
+require('dotenv').config();
+
+const connectToMongo = () => {
+    mongoose.connect(process.env.MONGO_URL)
+    .then((s) => console.log('success'))
+    .catch((e) => console.log(e));
 }
-module.exports = connectTOMongo;
+module.exports = connectToMongo;

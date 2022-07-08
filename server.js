@@ -19,3 +19,22 @@ app.get("/", (req, res) => {
 app.listen(5000, () => {
     console.log("listening")
 });
+
+// const User = require('./models/UserModel');
+
+// const myFunction = async () => {
+//     const user = await User.findById({ "_id": "62c6f6cca78ff87ca9b152d5" })
+//     await user.populate({
+//         path: 'roles',
+//         populate: [
+//             {
+//                 path: 'permissions',
+//                 model: 'Permission',
+//                 select : '_id',
+//             }
+//         ]
+//     })
+//     console.log(user)
+
+// }
+// myFunction()

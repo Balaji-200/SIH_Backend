@@ -33,7 +33,6 @@ const validateRegistration = (req, res, next) => {
 // Login
 const loginAuthRules = () => {
   return [
-      body('username').isAlphanumeric(),
       body('password').isAlphanumeric().isLength({ min: 6 }),
   ]
 }

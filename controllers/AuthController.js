@@ -4,18 +4,25 @@ const bcrypt = require("bcrypt")
 // env package
 require('dotenv').config();
 
+// initialize jwt
+var jwt = require('jsonwebtoken');
+
+// jwt secret
+const JWT_SECRET = process.env.JWT_SECRET
+
+
 // Node Mailer
 const nodemailer = require('nodemailer');
 
 // User model
 const User = require("../models/UserModel");
 
-
 // User OTP Verification model
 const UserVerification = require("../models/UserVerificationModel");
 
 const { currentDateTime } = require('./DateController');
-const { errorMessage,successMessage } = require("./messageController");
+const { errorMessage } = require("./messageController");
+const { successMessage } = require("./successMssageController")
 
 // Node Mailer setup
 let transporter = nodemailer.createTransport({
@@ -26,6 +33,7 @@ let transporter = nodemailer.createTransport({
     }
 })
 
+// register User
 const registerUser = async (req, res) => {
     try {
         let { name, surname, email, age, username, password } = req.body;
@@ -38,6 +46,7 @@ const registerUser = async (req, res) => {
             email,
             username,
             password,
+            roles:["62c52b0c21fd5534714e76c8"],
             verified: false,
         })
         newUser
@@ -47,7 +56,7 @@ const registerUser = async (req, res) => {
                 sendVerificationEmail(result, res);
             })
     } catch (error) {
-        errorMessage(res,error);
+        res.json({"status":"failed","message":error})
     }
 }
 
@@ -71,10 +80,12 @@ const sendVerificationEmail = async ({ _id, email }, res) => {
         await newOtpVerification.save();
         await transporter.sendMail(mailOptions);
         let message = "Verification otp is send to your email";
-        let data = { userId: _id, email: email }; 
+        
+        let data = { userId: _id, email: email}; 
+
         successMessage(res,message,data);
     } catch (error) {
-        errorMessage(res,error);
+        res.json({"status":"failed","message":error})
     }
 
 }
@@ -88,7 +99,6 @@ const verifyOtp = async (req, res) => {
             errorMessage(res,message);
         } else {
             const userVerificationRecord = await UserVerification.find({ userId: userId });
-            console.log(userVerificationRecord);
             if (userVerificationRecord.length <= 0) {
                 let message = "Account record not find, please sign up or login";
                 errorMessage(res,message);
@@ -107,7 +117,7 @@ const verifyOtp = async (req, res) => {
                         await User.updateOne({ _id: userId }, { verified: true });
                         await UserVerification.softDelete({ userId });
                         let message = "Your email account has been successfully verified.";
-                        successMessage(res,message,'');
+                        successMessage(res,message," ");
                     } else {
                         let message = "OTP does match, please try again";
                         errorMessage(res,message);
@@ -116,7 +126,8 @@ const verifyOtp = async (req, res) => {
             }
         }
     } catch (error) {
-        errorMessage(error);
+        let message = error
+        errorMessage(res,message);
     }
 }
 
@@ -149,32 +160,42 @@ const resendOtp = async (req, res) => {
 
         }
     } catch (error) {
-        errorMessage(error);
+        let message = error
+        errorMessage(res,message);
     }
 }
 
 // LoginUser
 const userLogin = async (req, res) => {
-    const { username, password } = await req.body;
     try {
+        const { username, password } = await req.body;
         let user = await User.findOne({ username });
         const passwordCompare = bcrypt.compare(password, user.password)
         if (!user || !passwordCompare) {
             let message = "Try to login with correct credentials";
             errorMessage(res,message);
         }
-        const data = {
-            user: {
-                id: user.id
+        else{
+            const data = {
+                user: {
+                    id: user.id
+                }
             }
+            const authToken = jwt.sign(data, JWT_SECRET,{ expiresIn: '24h'});
+            let message = "Login Successfull";
+            successMessage(res,message,authToken);
         }
-        const authToken = jwt.sign(data, JWT_SECRET);
-        let message = "Login Successfull";
-        let toSendData = { authToken: authToken };
-        successMessage(res,message, toSendData);
     } catch (error) {
-        errorMessage(res,error);
+        res.json({"status":"failed","message":error})
     }
+}
+
+// User Profile
+const userProfile = async (req,res) => {
+    let id = req.userId
+    const userDetails = await User.findOne({_id:id},{"_id":0,"roles":0,"verified":0,"__v":0,"password":0})
+    res.json({"profileDetails":userDetails})
+
 }
 
 module.exports = {
@@ -182,4 +203,5 @@ module.exports = {
     verifyOtp: verifyOtp,
     resendOtp: resendOtp,
     userLogin: userLogin,
+    userProfile:userProfile,
 }

@@ -10,6 +10,7 @@ var jwt = require('jsonwebtoken');
 // jwt secret
 const JWT_SECRET = process.env.JWT_SECRET
 
+const Role = require('../models/RoleModel');
 
 // Node Mailer
 const nodemailer = require('nodemailer');
@@ -46,7 +47,7 @@ const registerUser = async (req, res) => {
             email,
             username,
             password,
-            roles:["62c52b0c21fd5534714e76c8"],
+            roles:["62c812ea4b87c410e33ecffb"],
             verified: false,
         })
         newUser
@@ -198,10 +199,23 @@ const userProfile = async (req,res) => {
 
 }
 
+const addRole = async (req,res) => {
+    let {name , description , permissions } = req.body;
+    const role = new Role({
+        name,
+        description,
+        permissions
+    })
+    await role
+        .save()
+        .then(res.json({role:role}))
+}
+
 module.exports = {
     registerUser: registerUser,
     verifyOtp: verifyOtp,
     resendOtp: resendOtp,
     userLogin: userLogin,
     userProfile:userProfile,
+    addRole:addRole,
 }

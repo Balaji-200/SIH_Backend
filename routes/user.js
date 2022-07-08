@@ -26,4 +26,7 @@ router.post("/login_user",loginAuthRules(), validateLogin, authController.userLo
 //user profile
 router.get("/profile",validateToken,authController.userProfile)
 
+// add roles
+router.post("/add_role", authController.addRole)
+
 module.exports = router

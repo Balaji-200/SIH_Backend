@@ -11,6 +11,9 @@ const { registrationAuthRules, validateRegistration,loginAuthRules, validateLogi
 // validate Token
 const validateToken = require('../validations/tokenValidation')
 
+// permission Validation
+const validPermission = require("../validations/routePermission")
+
 // creating new user
 router.post("/create_user",registrationAuthRules(),validateRegistration, authController.registerUser)
 
@@ -24,6 +27,12 @@ router.post("/resendOTPVerification", authController.resendOtp)
 router.post("/login_user",loginAuthRules(), validateLogin, authController.userLogin)
 
 //user profile
-router.get("/profile",validateToken,authController.userProfile)
+router.get("/profile",validateToken,validPermission,authController.userProfile)
+
+// add roles
+router.post("/add_role", authController.addRole)
+
+// add routepermissions
+router.post("/add_routePermission", authController.addRoutePermission)
 
 module.exports = router

@@ -10,6 +10,7 @@ var jwt = require('jsonwebtoken');
 // jwt secret
 const JWT_SECRET = process.env.JWT_SECRET
 
+const Role = require('../models/RoleModel');
 
 // Node Mailer
 const nodemailer = require('nodemailer');
@@ -17,8 +18,12 @@ const nodemailer = require('nodemailer');
 // User model
 const User = require("../models/UserModel");
 
+// RoutePermission Model 
+const RoutePermission = require("../models/RoutePermissionModel")
+
 // User OTP Verification model
 const UserVerification = require("../models/UserVerificationModel");
+
 
 const { currentDateTime } = require('./DateController');
 const { errorMessage,successMessage } = require("./messageController");
@@ -45,7 +50,7 @@ const registerUser = async (req, res) => {
             email,
             username,
             password,
-            roles:["62c52b0c21fd5534714e76c8"],
+            roles:["62c8621cd243f5ceaa9518a1"],
             verified: false,
         })
         newUser
@@ -194,10 +199,35 @@ const userProfile = async (req,res) => {
 
 }
 
+const addRole = async (req,res) => {
+    let {name , description , permissions } = req.body;
+    const role = new Role({
+        name,
+        description,
+        permissions
+    })
+    await role
+        .save()
+        .then(res.json({role:role}))
+}
+
+const addRoutePermission = async (req,res) => {
+    let {route , permissions } = req.body;
+    const routePermission = new RoutePermission({
+        route,
+        permissions
+    })
+    await routePermission
+        .save()
+        .then(res.json({routePermission:routePermission}))
+}
+
 module.exports = {
     registerUser: registerUser,
     verifyOtp: verifyOtp,
     resendOtp: resendOtp,
     userLogin: userLogin,
     userProfile:userProfile,
+    addRole:addRole,
+    addRoutePermission:addRoutePermission,
 }

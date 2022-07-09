@@ -1,5 +1,4 @@
 const mongoose = require("mongoose")
-const Permission = require('../models/PermissionModel')
 const Role = new mongoose.Schema({
     name: {
         type: String,

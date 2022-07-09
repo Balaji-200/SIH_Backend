@@ -6,14 +6,17 @@ const RoutePermission = require("../models/RoutePermissionModel")
 
 const validatePermission = async (req, res, next) => {
     try {
+        let routePermissions = []
         let userPermissions = []
         let reqRoute = req.originalUrl
         const route = await RoutePermission.findOne({ route: reqRoute })
-        await route.populate({
+        await route.populate({ 
             path: 'permissions',
-            select: 'name',
+            select : 'name',
         })
-        let routePermissions = route.permissions.name
+        for(let i in route.permissions){
+            routePermissions.push(route.permissions[i].name)
+        }
         console.log(routePermissions)
 
         let id = req.userId
@@ -27,21 +30,24 @@ const validatePermission = async (req, res, next) => {
                 select: 'name',
             }
         })
-
         // const userPermission = user.roles[0].permissions[0]
-        for (let j in user.roles) {
-            for (let k in user.roles[j].permissions) {
+        for(let j in user.roles){
+            for(let k in user.roles[j].permissions){
                 userPermissions.push(user.roles[j].permissions[k].name)
             }
         }
         console.log(userPermissions)
-        if (userPermissions.includes(routePermissions)) {
-            console.log("success")
-            next();
-            return;
-        }
-        else {
-            console.log("error occurred")
+        for (let i in userPermissions){
+            for( let j in routePermissions){
+                if(userPermissions[i] === routePermissions[j]){
+                    console.log("success")
+                    next();
+                    return;
+                }
+                else{
+                    console.log("error occurred")
+                }
+            }
         }
     } catch (error) {
         console.log(error)

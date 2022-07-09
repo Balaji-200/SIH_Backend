@@ -5,12 +5,11 @@ const RoutePermission = new mongoose.Schema({
         required: true,
         unique: true,
     },
-    permissions: [
+    permissions:
         {
             type: mongoose.Schema.ObjectId,
             ref: 'permission',
         },
-    ],
 })
 
 module.exports = mongoose.model('routePermission', RoutePermission)

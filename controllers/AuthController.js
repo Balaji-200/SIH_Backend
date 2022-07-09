@@ -18,8 +18,12 @@ const nodemailer = require('nodemailer');
 // User model
 const User = require("../models/UserModel");
 
+// RoutePermission Model 
+const RoutePermission = require("../models/RoutePermissionModel")
+
 // User OTP Verification model
 const UserVerification = require("../models/UserVerificationModel");
+
 
 const { currentDateTime } = require('./DateController');
 const { errorMessage } = require("./messageController");
@@ -47,7 +51,7 @@ const registerUser = async (req, res) => {
             email,
             username,
             password,
-            roles:["62c812ea4b87c410e33ecffb"],
+            roles:["62c8621cd243f5ceaa9518a1"],
             verified: false,
         })
         newUser
@@ -211,6 +215,17 @@ const addRole = async (req,res) => {
         .then(res.json({role:role}))
 }
 
+const addRoutePermission = async (req,res) => {
+    let {route , permissions } = req.body;
+    const routePermission = new RoutePermission({
+        route,
+        permissions
+    })
+    await routePermission
+        .save()
+        .then(res.json({routePermission:routePermission}))
+}
+
 module.exports = {
     registerUser: registerUser,
     verifyOtp: verifyOtp,
@@ -218,4 +233,5 @@ module.exports = {
     userLogin: userLogin,
     userProfile:userProfile,
     addRole:addRole,
+    addRoutePermission:addRoutePermission,
 }

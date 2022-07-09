@@ -16,7 +16,7 @@ const UserVerification = require("../models/UserVerificationModel");
 
 const { currentDateTime } = require('./DateController');
 const { errorMessage,successMessage } = require("./messageController");
-
+const messages = require('../lang/messages.json')
 // Node Mailer setup
 let transporter = nodemailer.createTransport({
     service: "gmail",
@@ -70,9 +70,9 @@ const sendVerificationEmail = async ({ _id, email }, res) => {
         })
         await newOtpVerification.save();
         await transporter.sendMail(mailOptions);
-        let message = "Verification otp is send to your email";
+        // let message = "Verification otp is send to your email";
         let data = { userId: _id, email: email }; 
-        successMessage(res,message,data);
+        successMessage(res,messages.successMessages.otpSentSuccess,data);
     } catch (error) {
         errorMessage(res,error);
     }

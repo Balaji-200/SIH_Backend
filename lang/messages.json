@@ -1,0 +1,5 @@
+{
+    "successMessages": {
+        "otpSentSuccess":"OTP was successfully sent to your email!"
+    }
+}

@@ -15,7 +15,12 @@ const registrationAuthRules = () => {
             throw new Error('Email already in use')
         }
     }),
-    body('username').isLength({ min: 6 }),
+    body('username').isLength({ min: 6 }).custom(async (username) => {
+      const existingUser = await User.findOne({ username })
+      if (existingUser) {
+          throw new Error('Username Already Taken')
+      }
+  }),
     body('password').isAlphanumeric().isLength({ min: 6 }),
   ]
 }

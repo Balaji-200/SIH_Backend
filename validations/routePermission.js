@@ -36,7 +36,6 @@ const validatePermission = async (req, res, next) => {
         }
         console.log(userPermissions)
         if (userPermissions.includes(routePermissions)) {
-            console.log("success")
             next();
             return;
         }

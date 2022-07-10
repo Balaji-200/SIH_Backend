@@ -10,6 +10,7 @@ var jwt = require('jsonwebtoken');
 // jwt secret
 const JWT_SECRET = process.env.JWT_SECRET
 
+// Role Model
 const Role = require('../models/RoleModel');
 
 // Node Mailer
@@ -24,10 +25,15 @@ const RoutePermission = require("../models/RoutePermissionModel")
 // User OTP Verification model
 const UserVerification = require("../models/UserVerificationModel");
 
-
+// Date Controller
 const { currentDateTime } = require('./DateController');
+
+// Message Controller
 const { errorMessage,successMessage } = require("./messageController");
+
+// Message File
 const messages = require('../lang/messages.json')
+
 // Node Mailer setup
 let transporter = nodemailer.createTransport({
     service: "gmail",
@@ -96,13 +102,12 @@ const verifyOtp = async (req, res) => {
     try {
         let { userId, otp } = req.body;
         if (!userId || !otp) {
-            let message = "Empty otp details are not allowed";
-            errorMessage(res,message);
+            errorMessage(res,messages.errorMessages.emptyOtp);
+           
         } else {
             const userVerificationRecord = await UserVerification.find({ userId: userId });
             if (userVerificationRecord.length <= 0) {
-                let message = "Account record not find, please sign up or login";
-                errorMessage(res,message);
+                errorMessage(res,messages.errorMessages.accountRecord);
             } else {
                 // check expiry
                 const { expiredAt } = userVerificationRecord[0];
@@ -110,18 +115,15 @@ const verifyOtp = async (req, res) => {
                 if (currentDateTime(expiredAt) < Date.now()) {
                     // otp expired
                     await UserVerification.softDelete({ userId });
-                    let message = "OTP has expired , Try to resend it";
-                    errorMessage(res,message);
+                    errorMessage(res,messages.errorMessages.expireOtp);
                 } else {
                     // success
                     if (otp === originalOtp) {
                         await User.updateOne({ _id: userId }, { verified: true });
-                        await UserVerification.softDelete({ userId });
-                        let message = "Your email account has been successfully verified.";
-                        successMessage(res,message," ");
+                        await UserVerification.softDelete({ userId });                        
+                        successMessage(res,messages.successMessages.verifySuccess);
                     } else {
-                        let message = "OTP does match, please try again";
-                        errorMessage(res,message);
+                        errorMessage(res,messages.errorMessages.otpNotMatch);
                     }
                 }
             }
@@ -149,14 +151,12 @@ const resendOtp = async (req, res) => {
         }).count();
 
         if (!userId || !email) {
-            let message = "Empty email details are not allowed";
-            errorMessage(res,message);
+            errorMessage(res,messages.errorMessages.emptyEmail);
         } else {
             if (otpObject < 5) {
                 sendVerificationEmail({ _id: userId, email }, res)
             } else {
-                let message = "OTP LIMIT REACHED . Try After 5 minutes";
-                errorMessage(res,message);
+                errorMessage(res,messages.errorMessages.otpLimit);
             }
 
         }
@@ -173,8 +173,7 @@ const userLogin = async (req, res) => {
         let user = await User.findOne({ username });
         const passwordCompare = bcrypt.compare(password, user.password)
         if (!user || !passwordCompare) {
-            let message = "Try to login with correct credentials";
-            errorMessage(res,message);
+            errorMessage(res,messages.errorMessages.incorrectCredentials);
         }
         else{
             const data = {
@@ -183,8 +182,7 @@ const userLogin = async (req, res) => {
                 }
             }
             const authToken = jwt.sign(data, JWT_SECRET,{ expiresIn: '24h'});
-            let message = "Login Successfull";
-            successMessage(res,message,authToken);
+            successMessage(res,messages.successMessages.loginSuccess,authToken);
         }
     } catch (error) {
         res.json({"status":"failed","message":error})

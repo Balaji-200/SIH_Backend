@@ -1,5 +1,17 @@
 {
     "successMessages": {
-        "otpSentSuccess":"OTP was successfully sent to your email!"
+        "otpSentSuccess":"OTP was successfully sent to your email!",
+        "verifySuccess":"Your email account has been successfully verified",
+        "loginSuccess":"Login Successfull"
+    },
+
+    "errorMessages": {
+        "emptyOtp":" Empty otp details are not allowed!",
+        "accountRecord":"Account record not find, please sign up or login!",
+        "expireOtp":"OTP has expired , Try to resend it again!",
+        "otpNotMatch":"OTP does match, please try again",
+        "emptyEmail":"Empty email details are not allowed",
+        "otpLimit":"OTP LIMIT REACHED . Try After 5 minutes",
+        "incorrectCredentials":"Try to login with correct credentials"
     }
 }
